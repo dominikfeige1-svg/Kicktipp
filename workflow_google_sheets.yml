@@ -1,0 +1,27 @@
+name: Claude Analyst + Google Sheets
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - run: pip install anthropic gspread google-auth-oauthlib google-auth-httplib2
+      - env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+        run: python claude_analyst_google_sheets.py
+      - run: |
+          git config user.email "analyst@kicktipp.de"
+          git config user.name "Claude Analyst"
+          git add output/tipps.json
+          git commit -m "Daily analysis $(date)" || true
+          git push
