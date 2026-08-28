@@ -1,0 +1,55 @@
+name: 🤖 KICKTIPP MASTER AUTOMATION
+
+on:
+  # Täglich um 06:00 Uhr ausführen
+  schedule:
+    - cron: '0 6 * * *'
+  
+  # Auch manuell trigger möglich
+  workflow_dispatch:
+
+jobs:
+  master-automation:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Repository auschecken
+        uses: actions/checkout@v3
+      
+      - name: 🐍 Python 3.11 installieren
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: 📦 Dependencies installieren
+        run: |
+          python -m pip install --upgrade pip
+          pip install selenium python-dotenv requests beautifulsoup4
+      
+      - name: 🔐 Secrets laden
+        env:
+          KICKTIPP_EMAIL: ${{ secrets.KICKTIPP_EMAIL }}
+          KICKTIPP_PASSWORD: ${{ secrets.KICKTIPP_PASSWORD }}
+        run: |
+          echo "KICKTIPP_EMAIL=$KICKTIPP_EMAIL" > .env
+          echo "KICKTIPP_PASSWORD=$KICKTIPP_PASSWORD" >> .env
+      
+      - name: 🤖 MASTER AUTOMATION starten
+        run: |
+          python master_automation_v3.py
+      
+      - name: 📝 Änderungen zu Git commit
+        run: |
+          git config --local user.email "automation@kicktipp.de"
+          git config --local user.name "🤖 Kicktipp Bot"
+          git add .
+          git commit -m "🤖 Auto-Update Tipps & Ergebnisse $(date)" || true
+      
+      - name: 🚀 Zu GitHub pushen
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
+      
+      - name: ✅ Fertig!
+        run: echo "✅ AUTOMATION ERFOLGREICH AUSGEFÜHRT!"
